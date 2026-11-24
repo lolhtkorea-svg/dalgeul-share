@@ -6,19 +6,30 @@
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="#291934">
-<title>달결 · 공유받은 운세</title>
+<title>달결 · 오늘 운세와 이번 주 운세</title>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="달결">
+<meta property="og:title" content="달결 ✨ 오늘 운세와 이번 주 운세">
+<meta property="og:description" content="오늘의 흐름과 이번 주 운세를 달결에서 함께 확인하세요.">
+<meta property="og:url" content="https://lolhtkorea-svg.github.io/dalgeul-share/">
+<meta property="og:image" content="https://lolhtkorea-svg.github.io/dalgeul-share/preview.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="달결 ✨ 오늘 운세 · 이번 주 운세">
+<meta name="twitter:image" content="https://lolhtkorea-svg.github.io/dalgeul-share/preview.png">
 <style>
 *{box-sizing:border-box}body{margin:0;min-height:100vh;background:linear-gradient(150deg,#160f26,#392445 68%,#24162c);color:#fff2d9;font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif;display:grid;place-items:center;padding:24px}
 main{max-width:450px;width:100%;border-radius:25px;border:2px solid #e7bd67;background:#291e37;box-shadow:0 0 30px #d2a14b55;padding:25px;text-align:center}
-.mark{font-size:34px;color:#ffda86}h1{margin:8px 0 15px;font-size:27px}.sub{color:#e4d4e6;font-size:14px;line-height:1.75}.preview{background:#372942;border:1px solid #ae8b66;border-radius:17px;margin:23px 0;padding:22px 16px;overflow-wrap:anywhere}.preview h2{font-size:20px;margin:6px 0;color:#ffdfa1}.preview p{font-size:15px;line-height:1.6;color:#f4e5ef}
+.mark{font-size:34px;color:#ffda86}h1{margin:8px 0 15px;font-size:27px}.sub{color:#e4d4e6;font-size:14px;line-height:1.75}.preview{background:#372942;border:1px solid #ae8b66;border-radius:17px;margin:23px 0;padding:22px 16px;overflow-wrap:anywhere}.preview h2{font-size:20px;margin:6px 0;color:#ffdfa1}.preview p{font-size:15px;line-height:1.65;color:#f4e5ef}.preview .fortune-block{text-align:left;padding:15px 5px;border-top:1px solid #765c76}.preview .fortune-block h3{font-size:18px;color:#ffe3a4;margin:8px 0}.preview .fortune-block small{color:#bfb0ce}.preview .fortune-block strong{display:block;color:#f6d18d;margin-top:10px}.preview .fortune-block p{margin:6px 0 14px}.intro-logo{display:block;width:78px;height:78px;border-radius:20px;margin:0 auto 12px;object-fit:contain}
 button{appearance:none;border:0;border-radius:14px;background:linear-gradient(120deg,#fce9ac,#d4a354,#fff1be);color:#352034;padding:17px 16px;width:100%;font-size:18px;font-weight:850;cursor:pointer}
 .note{font-size:12px;color:#d0bdce;line-height:1.7;margin:16px 0 0}button:focus-visible{outline:3px solid white;outline-offset:3px}#error{color:#ffcbca}
 </style>
 </head>
 <body>
 <main>
-<div class="mark" aria-hidden="true">✦</div>
-<h1>달결 · 공유받은 운세</h1>
+<img class="intro-logo" src="preview.png" alt="달결 공식 아이콘">
+<h1>달결 · 오늘과 이번 주 운세</h1>
 <p class="sub">달결 앱이 설치되어 있다면 아래 버튼을 눌러 공유받은 결과를 확인하세요.</p>
 <section class="preview" aria-label="공유받은 결과">
 <h2 id="heading">공유 결과 확인</h2>
@@ -36,13 +47,33 @@ const button=document.getElementById("open");
 const status=document.getElementById("status");
 function reject(){document.getElementById("heading").textContent="공유 링크를 확인해 주세요";document.getElementById("summary").textContent="공유 링크가 올바르지 않거나 일부가 잘렸습니다.";document.getElementById("status").textContent="달결에서 공유하기를 다시 눌러 새 링크를 보내주세요.";document.getElementById("status").id="error";}
 try{
-  if(!/^[A-Za-z0-9_-]{10,3000}$/.test(token))throw Error("bad token");
+  if(!/^[A-Za-z0-9_-]{10,9000}$/.test(token))throw Error("bad token");
   const binary=atob(token.replace(/-/g,"+").replace(/_/g,"/")+"=".repeat((4-token.length%4)%4));
   const bytes=Uint8Array.from(binary,c=>c.charCodeAt(0));
   const obj=JSON.parse(new TextDecoder("utf-8",{fatal:true}).decode(bytes));
   if(!["personal","couple"].includes(obj.kind)||typeof obj.headline!=="string"||typeof obj.summary!=="string"||obj.headline.length>100||obj.summary.length>220)throw Error("bad preview");
-  document.getElementById("heading").textContent=obj.kind==="couple"?"💕 공유받은 연애·궁합운":"✨ 공유받은 사주·운세";
-  document.getElementById("summary").textContent=obj.headline+" · "+obj.summary;
+  document.getElementById("heading").textContent=obj.kind==="couple"?"💕 공유받은 연애·궁합운":"✨ 공유받은 오늘·이번 주 운세";
+  const preview=document.querySelector(".preview");
+  const summary=document.getElementById("summary");
+  summary.textContent=obj.kind==="personal"&&obj.today?"오늘의 운세와 이번 주 운세를 확인해 보세요.":obj.headline+" · "+obj.summary;
+  function addSection(title,entries) {
+    const part=document.createElement("div");part.className="fortune-block";
+    const heading=document.createElement("h3");heading.textContent=title;part.append(heading);
+    for(const [label,value] of entries){
+      if(typeof value!=="string"||!value.trim())continue;
+      if(label){const labelNode=document.createElement("strong");labelNode.textContent=label;part.append(labelNode)}
+      const p=document.createElement("p");p.textContent=value;part.append(p);
+    }
+    preview.append(part);
+  }
+  if(obj.kind==="personal"&&typeof obj.today==="string"&&typeof obj.week==="string"){
+    addSection("☀ 오늘의 운세"+(typeof obj.day==="string"?" · "+obj.day:""),[
+      ["",obj.headline],["오늘의 흐름",obj.today],["오늘의 조언",obj.todayAdvice],["주의할 점",obj.todayCaution]
+    ]);
+    addSection("✦ 이번 주 운세"+(typeof obj.weekDates==="string"?" · "+obj.weekDates:""),[
+      ["",obj.week],["이번 주 흐름",obj.weekSummary],["연애·관계 운세",obj.weekAdvice],["주의할 점",obj.weekCaution]
+    ]);
+  }
   button.disabled=false;
   button.addEventListener("click",()=>{
     status.textContent="달결 앱으로 연결하고 있습니다. 설치되어 있지 않으면 앱이 열리지 않을 수 있습니다.";
