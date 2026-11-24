@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#291934">
+<title>달결 · 공유받은 운세</title>
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:linear-gradient(150deg,#160f26,#392445 68%,#24162c);color:#fff2d9;font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif;display:grid;place-items:center;padding:24px}
+main{max-width:450px;width:100%;border-radius:25px;border:2px solid #e7bd67;background:#291e37;box-shadow:0 0 30px #d2a14b55;padding:25px;text-align:center}
+.mark{font-size:34px;color:#ffda86}h1{margin:8px 0 15px;font-size:27px}.sub{color:#e4d4e6;font-size:14px;line-height:1.75}.preview{background:#372942;border:1px solid #ae8b66;border-radius:17px;margin:23px 0;padding:22px 16px;overflow-wrap:anywhere}.preview h2{font-size:20px;margin:6px 0;color:#ffdfa1}.preview p{font-size:15px;line-height:1.6;color:#f4e5ef}
+button{appearance:none;border:0;border-radius:14px;background:linear-gradient(120deg,#fce9ac,#d4a354,#fff1be);color:#352034;padding:17px 16px;width:100%;font-size:18px;font-weight:850;cursor:pointer}
+.note{font-size:12px;color:#d0bdce;line-height:1.7;margin:16px 0 0}button:focus-visible{outline:3px solid white;outline-offset:3px}#error{color:#ffcbca}
+</style>
+</head>
+<body>
+<main>
+<div class="mark" aria-hidden="true">✦</div>
+<h1>달결 · 공유받은 운세</h1>
+<p class="sub">달결 앱이 설치되어 있다면 아래 버튼을 눌러 공유받은 결과를 확인하세요.</p>
+<section class="preview" aria-label="공유받은 결과">
+<h2 id="heading">공유 결과 확인</h2>
+<p id="summary">공유된 결과를 확인하고 있습니다.</p>
+</section>
+<button id="open" type="button" disabled>달결 앱에서 결과 보기</button>
+<p class="note" id="status">앱이 없다면 정식 출시 후 설치할 수 있습니다. 별도의 회원가입이나 결제는 없습니다.</p>
+</main>
+<script>
+"use strict";
+// Static site: no storage, analytics, remote requests, or automatic redirects.
+// Shared result summaries travel in the URL fragment, never in a URL query/server log.
+const token=location.hash.slice(1);
+const button=document.getElementById("open");
+const status=document.getElementById("status");
+function reject(){document.getElementById("heading").textContent="공유 링크를 확인해 주세요";document.getElementById("summary").textContent="공유 링크가 올바르지 않거나 일부가 잘렸습니다.";document.getElementById("status").textContent="달결에서 공유하기를 다시 눌러 새 링크를 보내주세요.";document.getElementById("status").id="error";}
+try{
+  if(!/^[A-Za-z0-9_-]{10,3000}$/.test(token))throw Error("bad token");
+  const binary=atob(token.replace(/-/g,"+").replace(/_/g,"/")+"=".repeat((4-token.length%4)%4));
+  const bytes=Uint8Array.from(binary,c=>c.charCodeAt(0));
+  const obj=JSON.parse(new TextDecoder("utf-8",{fatal:true}).decode(bytes));
+  if(!["personal","couple"].includes(obj.kind)||typeof obj.headline!=="string"||typeof obj.summary!=="string"||obj.headline.length>100||obj.summary.length>220)throw Error("bad preview");
+  document.getElementById("heading").textContent=obj.kind==="couple"?"💕 공유받은 연애·궁합운":"✨ 공유받은 사주·운세";
+  document.getElementById("summary").textContent=obj.headline+" · "+obj.summary;
+  button.disabled=false;
+  button.addEventListener("click",()=>{
+    status.textContent="달결 앱으로 연결하고 있습니다. 설치되어 있지 않으면 앱이 열리지 않을 수 있습니다.";
+    location.href="dalgeul://result?data="+token;
+  });
+}catch(e){reject()}
+</script>
+</body>
+</html>
