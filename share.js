@@ -61,10 +61,11 @@
     ctx.fillStyle='#f4dfb6';ctx.fillRect(82,991,736,58);ctx.fillStyle='#34243d';ctx.textAlign='center';ctx.font='700 27px sans-serif';ctx.fillText('카드를 눌러 전체 결과 보기',450,1030);
   }
   function sdk() {
-    if(window.Kakao?.Share)return Promise.resolve(window.Kakao);
+    const ready=()=>typeof window.Kakao?.init==='function'&&typeof window.Kakao?.isInitialized==='function';
+    if(ready())return Promise.resolve(window.Kakao);
     return new Promise((resolve,reject)=>{
       const script=document.createElement('script');script.src=config.sdkUrl;script.integrity=config.sdkIntegrity;script.crossOrigin='anonymous';
-      script.onload=()=>window.Kakao?.Share?resolve(window.Kakao):reject(Error('SDK unavailable'));
+      script.onload=()=>{if(ready())resolve(window.Kakao);else{script.remove();reject(Error('SDK unavailable'));}};
       script.onerror=()=>{script.remove();reject(Error('SDK unavailable'));};document.head.append(script);
     });
   }
@@ -84,6 +85,7 @@
     try{
       if(!/^[a-f0-9]{32}$/i.test(config?.kakaoJavaScriptKey||''))throw Error('Unavailable');
       const kakao=await sdk();if(!kakao.isInitialized())kakao.init(config.kakaoJavaScriptKey);
+      if(typeof kakao.Share?.uploadImage!=='function')throw Error('SDK unavailable');
       const blob=await new Promise((resolve,reject)=>canvas.toBlob(value=>value?resolve(value):reject(Error('Image unavailable')),'image/png'));
       const files=new DataTransfer();files.items.add(new File([blob],'dalgeul-result.png',{type:'image/png'}));
       const response=await kakao.Share.uploadImage({file:files.files});
