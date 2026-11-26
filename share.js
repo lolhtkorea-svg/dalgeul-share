@@ -4,8 +4,8 @@
   const config = window.DALGEUL_SHARE_CONFIG;
   const button = document.getElementById('prepare-share');
   const status = document.getElementById('status');
-  const canvas = document.getElementById('share-preview');
-  let info, token, imageUrl, busy = false;
+
+  let info;
   function normalize(source) {
     if (!source || !['personal','couple'].includes(source.kind)) throw Error('Invalid result');
     if (typeof source.headline !== 'string' || !source.headline.trim() || typeof source.summary !== 'string') throw Error('Invalid result');
@@ -27,111 +27,56 @@
     const binary = atob(value.replace(/-/g,'+').replace(/_/g,'/') + '='.repeat((4-value.length%4)%4));
     return normalize(JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(Uint8Array.from(binary,c=>c.charCodeAt(0)))));
   }
-  function drawCard(data) {
-    const ctx = canvas.getContext('2d');
-    const gradient = ctx.createLinearGradient(0,0,900,1120);
-    gradient.addColorStop(0,'#352146');gradient.addColorStop(1,'#1d1937');
-    ctx.fillStyle=gradient;ctx.fillRect(0,0,900,1120);
-    ctx.strokeStyle='#d9b97a';ctx.lineWidth=3;ctx.strokeRect(35,35,830,1050);
-    ctx.fillStyle='#e6c68d';ctx.textAlign='center';ctx.font='700 30px sans-serif';ctx.fillText('달결',450,106);
-    ctx.font='700 27px sans-serif';ctx.fillStyle='#e3d0ee';ctx.fillText(data.kind==='couple'?'두 사람의 연애·궁합운':'오늘과 이번 주의 운세',450,169);
-    function wrap(text,x,y,width,font,color,maxLines,lineHeight) {
-      ctx.textAlign='left';ctx.font=font;ctx.fillStyle=color;
-      const lines=[];let line='';
-      for(const char of Array.from(String(text||''))){
-        if(char==='\n'||ctx.measureText(line+char).width>width){lines.push(line);line=char==='\n'?'':char;}else line+=char;
-      }
-      if(line)lines.push(line);
-      lines.slice(0,maxLines).forEach((value,index)=>ctx.fillText(value+(index===maxLines-1&&lines.length>maxLines?'…':''),x,y+index*lineHeight));
-      return y+Math.min(lines.length,maxLines)*lineHeight;
+  async function loadSdk() {
+    if (!window.Kakao?.Share) {
+      await new Promise((resolve,reject) => {
+        const script=document.createElement('script');
+        script.src=config.sdkUrl; script.integrity=config.sdkIntegrity; script.crossOrigin='anonymous';
+        script.onload=resolve; script.onerror=() => { script.remove(); reject(Error('SDK unavailable')); };
+        document.head.append(script);
+      });
     }
-    if(data.kind==='couple'){
-      ctx.textAlign='center';ctx.fillStyle='#ffe8c0';ctx.font='800 152px sans-serif';ctx.fillText(data.score+'%',450,410);
-      wrap(data.headline,96,525,708,'700 43px sans-serif','#fff0d4',2,60);
-      wrap(data.summary,96,680,708,'400 33px sans-serif','#eee1f3',5,49);
-    }else{
-      wrap(data.headline,88,270,724,'700 46px sans-serif','#fff0d4',2,61);
-      wrap('오늘의 흐름'+(data.day?' · '+data.day:''),88,425,724,'700 28px sans-serif','#e6c68d',1,42);
-      wrap(data.today||data.summary,88,480,724,'400 32px sans-serif','#f4eaf7',3,47);
-      ctx.strokeStyle='#74607b';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(88,645);ctx.lineTo(812,645);ctx.stroke();
-      wrap('이번 주 운세',88,704,724,'700 28px sans-serif','#e6c68d',1,42);
-      wrap(data.week||'이번 주의 흐름도 함께 확인해 보세요.',88,759,724,'700 35px sans-serif','#fff0d4',2,49);
-      wrap(data.weekSummary,88,869,724,'400 29px sans-serif','#eee1f3',2,44);
-    }
-    ctx.fillStyle='#f4dfb6';ctx.fillRect(82,991,736,58);ctx.fillStyle='#34243d';ctx.textAlign='center';ctx.font='700 27px sans-serif';ctx.fillText('카드를 눌러 전체 결과 보기',450,1030);
+    if (!window.Kakao.isInitialized()) window.Kakao.init(config.kakaoJavaScriptKey);
   }
-  function sdk() {
-    const ready=()=>typeof window.Kakao?.init==='function'&&typeof window.Kakao?.isInitialized==='function';
-    if(ready())return Promise.resolve(window.Kakao);
-    return new Promise((resolve,reject)=>{
-      const script=document.createElement('script');script.src=config.sdkUrl;script.integrity=config.sdkIntegrity;script.crossOrigin='anonymous';
-      script.onload=()=>{if(ready())resolve(window.Kakao);else{script.remove();reject(Error('SDK unavailable'));}};
-      script.onerror=()=>{script.remove();reject(Error('SDK unavailable'));};document.head.append(script);
-    });
-  }
-  function feed() {
-    const url=config.resultBaseUrl+'#'+token;
-    const link={mobileWebUrl:url,webUrl:url};
-    return {objectType:'feed',content:{title:info.kind==='couple'?'달결 · 우리 궁합 '+info.score+'%':'달결 · 오늘과 이번 주 운세',description:info.headline,imageUrl,imageWidth:900,imageHeight:1120,link},buttons:[{title:'결과 보기',link}],installTalk:true};
-  }
-  button.addEventListener('click',async()=>{
-    if(busy||!info)return;
-    if(imageUrl){
-      try{window.Kakao.Share.sendDefault(feed());status.textContent='카카오톡에서 받는 사람을 선택해 주세요. 선택 화면이 열리지 않으면 다시 눌러 주세요.';}
-      catch(_){status.textContent='카카오톡을 열지 못했어요. 잠시 후 다시 시도해 주세요.';}
-      return;
-    }
-    busy=true;button.disabled=true;status.textContent='카카오톡에서 볼 수 있도록 이미지를 준비하고 있어요…';
-    try{
-      if(!/^[a-f0-9]{32}$/i.test(config?.kakaoJavaScriptKey||''))throw Error('Unavailable');
-      const kakao=await sdk();if(!kakao.isInitialized())kakao.init(config.kakaoJavaScriptKey);
-      if(typeof kakao.Share?.uploadImage!=='function')throw Error('SDK unavailable');
-      const blob=await new Promise((resolve,reject)=>canvas.toBlob(value=>value?resolve(value):reject(Error('Image unavailable')),'image/png'));
-      const files=new DataTransfer();files.items.add(new File([blob],'dalgeul-result.png',{type:'image/png'}));
-      const response=await kakao.Share.uploadImage({file:files.files});
-      const uploaded=response?.infos?.original?.url||response?.original?.url;
-      if(typeof uploaded!=='string')throw Error('Unexpected image URL');
-      const image=new URL(uploaded);
-      if(image.protocol==='http:' && /^(?:[a-z0-9-]+\.)*(?:kakaocdn\.net|kakao\.com)$/i.test(image.hostname))image.protocol='https:';
-      if(image.protocol!=='https:' || image.username || image.password)throw Error('Unexpected image URL');
-      imageUrl=image.href;button.textContent='카카오톡으로 보내기';status.textContent='카드가 준비됐어요. 아래 버튼을 누르고 카카오톡에서 받는 사람을 선택해 주세요.';
-    }catch(error){
-      button.textContent='공유 카드 다시 준비';
-      let reason='카드를 준비하지 못했어요.';
-      let data=error?.response?.data || error?.responseJSON || error;
-      if(typeof data==='string'){try{data=JSON.parse(data);}catch(_){}}
-      const detail=String(data?.msg || data?.error_msg || data?.message || (typeof data==='string'?data:''));
-      const code=data?.code ?? data?.error_code;
-      if (/domain mismatched|unregistered domain/i.test(detail)) {
-        reason='카카오가 이 공유 주소를 승인하지 않았어요.';
-      } else if (detail==='SDK unavailable') {
-        reason='카카오 공유 도구를 불러오지 못했어요.';
-      } else if (detail==='Unexpected image URL') {
-        reason='카카오가 보낸 이미지 주소를 사용할 수 없어요.';
-      } else if (detail==='Image unavailable') {
-        reason='이 브라우저에서 카드 이미지를 만들지 못했어요.';
-      } else if (Number.isInteger(code)) {
-        reason='카카오에서 이미지를 받지 못했어요 (오류 '+code+').';
-      }
-      status.textContent=reason+' 아래에서 결과 링크를 복사해 카카오톡으로 보내세요.';
-    }
-    finally{busy=false;button.disabled=false;}
-  });
-  try{
-    info=decode(location.hash.slice(1));token=encode(info);drawCard(info);button.disabled=false;
-    status.textContent='이미지를 확인한 뒤 공유 카드를 준비해 주세요.';
-    const view=document.getElementById('view-result');view.href=config.resultBaseUrl+'#'+token;view.hidden=false;
+  try {
+    info=decode(location.hash.slice(1));
+    const short=window.DalgeulResultLink.pack(info);
+    const full=config.resultBaseUrl+'#'+encode(info);
+    const url=config.resultBaseUrl+'#'+short;
+    const title=info.kind==='couple'?'달결 · 우리 궁합 '+info.score+'%':'달결 · 오늘과 이번 주 운세';
+    const description=Array.from(info.kind==='couple'?info.summary:info.headline).slice(0,64).join('');
+    document.getElementById('card-title').textContent=title;
+    document.getElementById('excerpt').textContent=description;
+    const preview=document.getElementById('view-result');
+    preview.href=full; preview.hidden=false;
     const copy=document.getElementById('copy-result');
     copy.hidden=false;
-    copy.addEventListener('click',async()=>{
+    copy.onclick=async()=>{
+      try { await navigator.clipboard.writeText(full); status.textContent='결과 링크를 복사했어요.'; }
+      catch { status.textContent='결과 미리보기를 길게 눌러 링크를 복사해 주세요.'; }
+    };
+    const template={objectType:'feed',content:{title,description,imageUrl:config.resultBaseUrl+'preview.png',
+      imageWidth:512,imageHeight:512,link:{webUrl:url,mobileWebUrl:url}},buttonTitle:'달결에서 보기',installTalk:true};
+    async function ready() {
+      button.disabled=true;
       try {
-        await navigator.clipboard.writeText(view.href);
-        status.textContent='결과 링크를 복사했어요. 카카오톡 대화에 붙여 넣어 주세요.';
-      } catch (_) {
-        status.textContent='아래 결과 미리보기를 길게 눌러 링크를 복사해 주세요.';
-      }
-    });
-  }catch(_){
-    const error=document.getElementById('error');error.textContent='공유할 결과를 불러오지 못했어요. 달결 앱에서 공유하기를 다시 눌러 주세요.';error.hidden=false;canvas.hidden=true;button.hidden=true;status.textContent='';
+        await loadSdk();
+        button.textContent='카카오톡 친구 선택';
+        status.textContent='카카오톡에서 받을 친구나 대화방을 선택하세요.';
+        button.onclick=()=>{
+          try { window.Kakao.Share.sendDefault(template); }
+          catch { status.textContent='카카오톡을 열 수 없어요. 아래에서 결과 링크를 복사할 수 있어요.'; }
+        };
+      } catch {
+        status.textContent='카카오톡 연결을 불러오지 못했어요.';
+        button.textContent='카카오톡 연결 다시 시도'; button.onclick=ready;
+      } finally { button.disabled=false; }
+    }
+    if (short.length<=1100) ready();
+    else { button.hidden=true; status.textContent='이 결과는 링크로 공유할 수 있어요. 아래에서 결과 링크를 복사하세요.'; }
+  } catch {
+    const error=document.getElementById('error');
+    error.textContent='공유할 결과를 확인하지 못했어요. 달결에서 공유하기를 다시 눌러 주세요.';
+    error.hidden=false;button.hidden=true;
   }
 })();
