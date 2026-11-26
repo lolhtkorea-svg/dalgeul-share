@@ -10,7 +10,7 @@
     if (!source || !['personal','couple'].includes(source.kind)) throw Error('Invalid result');
     if (typeof source.headline !== 'string' || !source.headline.trim() || typeof source.summary !== 'string') throw Error('Invalid result');
     const result = {kind:source.kind};
-    const caps = {headline:75,summary:130,mascot:3,mascot2:3,animal1:70,animal2:70,day:10,today:150,todayAdvice:115,todayCaution:100,week:72,weekDates:35,weekSummary:145,weekAdvice:115,weekCaution:100};
+    const caps = {headline:75,summary:130,mascot:3,mascot2:3,animal1:70,animal2:70,day:10,today:150,todayAdvice:115,todayCaution:100,week:72,weekDates:35,weekSummary:145,weekAdvice:150,weekCaution:100};
     for (const [key, max] of Object.entries(caps)) if (typeof source[key] === 'string') result[key] = source[key].slice(0,max);
     if (source.kind === 'couple') {
       if (!Number.isFinite(source.score) || source.score < 0 || source.score > 100) throw Error('Invalid score');
