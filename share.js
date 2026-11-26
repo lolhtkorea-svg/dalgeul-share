@@ -40,7 +40,7 @@
   }
   try {
     info=decode(location.hash.slice(1));
-    const short=window.DalgeulResultLink.pack(info);
+    const short=window.DalgeulFortuneCard.webToken(info, window.DalgeulResultLink.pack(info));
     const full=config.resultBaseUrl+'#'+encode(info);
     const url=config.resultBaseUrl+'#'+short;
     const title=info.kind==='couple'?'달결 · 우리 궁합 '+info.score+'%':'달결 · 오늘과 이번 주 운세';

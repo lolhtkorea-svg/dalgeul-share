@@ -41,6 +41,7 @@ button{appearance:none;border:0;border-radius:14px;background:linear-gradient(12
 <p class="note"><a href="privacy.html">개인정보처리방침</a></p>
 </main>
 <script src="result-link-v1.js"></script>
+<script src="fortune-card-v1.js"></script>
 <script>
 "use strict";
 // The result is decoded in the browser. There is no application analytics or storage.
@@ -50,7 +51,7 @@ const button=document.getElementById("open");
 const status=document.getElementById("status");
 function reject(){document.getElementById("heading").textContent="공유 링크를 확인해 주세요";document.getElementById("summary").textContent="공유 링크가 올바르지 않거나 일부가 잘렸습니다.";document.getElementById("status").textContent="달결에서 공유하기를 다시 눌러 새 링크를 보내주세요.";document.getElementById("status").id="error";}
 try{
-  token=window.DalgeulResultLink.toAppToken(location.hash.slice(1));
+  token=window.DalgeulFortuneCard.toAppToken(location.hash.slice(1));
   if(!/^[A-Za-z0-9_-]{10,9000}$/.test(token))throw Error("bad token");
   const binary=atob(token.replace(/-/g,"+").replace(/_/g,"/")+"=".repeat((4-token.length%4)%4));
   const bytes=Uint8Array.from(binary,c=>c.charCodeAt(0));
