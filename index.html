@@ -36,6 +36,7 @@ button{appearance:none;border:0;border-radius:14px;background:linear-gradient(12
 <p id="summary">공유된 결과를 확인하고 있습니다.</p>
 </section>
 <button id="open" type="button" disabled>달결 앱에서 결과 보기</button>
+<p class="note"><a href="https://play.google.com/store/apps/details?id=kr.dalgeul.saju.next">Google Play에서 달결 설치</a><br>설치 후 이 카드로 돌아와 ‘달결 앱에서 결과 보기’를 눌러 주세요.</p>
 <p class="note" id="status" role="status" aria-live="polite">앱을 설치하지 않아도 위의 공유 결과를 볼 수 있어요. 앱에서 보기 버튼은 달결을 설치한 휴대폰에서 사용할 수 있습니다.</p>
 <p class="note"><a href="privacy.html">개인정보처리방침</a></p>
 </main>
@@ -87,7 +88,7 @@ try{
     location.href="dalgeul://result?data="+token;
     openingTimer=setTimeout(()=>{
       button.disabled=false;
-      if(!document.hidden)status.textContent="앱이 열리지 않았나요? 달결이 설치되어 있는지 확인해 주세요. 설치하지 않았다면 이 페이지에서 공유받은 결과를 확인하면 됩니다.";
+      if(!document.hidden)status.textContent="앱이 열리지 않으면 위의 Google Play 링크에서 설치한 뒤 이 카드로 돌아와 주세요.";
     },1800);
   });
 }catch(e){reject()}

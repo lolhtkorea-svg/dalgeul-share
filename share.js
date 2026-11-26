@@ -92,13 +92,23 @@
       const uploaded=response?.infos?.original?.url||response?.original?.url;
       if(typeof uploaded!=='string'||!/^https:\/\//.test(uploaded))throw Error('Image unavailable');
       imageUrl=uploaded;button.textContent='카카오톡으로 보내기';status.textContent='카드가 준비됐어요. 아래 버튼을 누르고 카카오톡에서 받는 사람을 선택해 주세요.';
-    }catch(_){button.textContent='공유 카드 다시 준비';status.textContent='카카오톡 공유를 준비하지 못했어요. 잠시 후 다시 시도하거나 아래에서 결과를 확인해 주세요.';}
+    }catch(_){button.textContent='공유 카드 다시 준비';status.textContent='카드를 준비하지 못했어요. 아래에서 결과 링크를 복사해 카카오톡으로 보내세요.';}
     finally{busy=false;button.disabled=false;}
   });
   try{
     info=decode(location.hash.slice(1));token=encode(info);drawCard(info);button.disabled=false;
     status.textContent='이미지를 확인한 뒤 공유 카드를 준비해 주세요.';
     const view=document.getElementById('view-result');view.href=config.resultBaseUrl+'#'+token;view.hidden=false;
+    const copy=document.getElementById('copy-result');
+    copy.hidden=false;
+    copy.addEventListener('click',async()=>{
+      try {
+        await navigator.clipboard.writeText(view.href);
+        status.textContent='결과 링크를 복사했어요. 카카오톡 대화에 붙여 넣어 주세요.';
+      } catch (_) {
+        status.textContent='아래 결과 미리보기를 길게 눌러 링크를 복사해 주세요.';
+      }
+    });
   }catch(_){
     const error=document.getElementById('error');error.textContent='공유할 결과를 불러오지 못했어요. 달결 앱에서 공유하기를 다시 눌러 주세요.';error.hidden=false;canvas.hidden=true;button.hidden=true;status.textContent='';
   }
