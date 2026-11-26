@@ -23,25 +23,26 @@
 main{max-width:450px;width:100%;border-radius:25px;border:2px solid #e7bd67;background:#291e37;box-shadow:0 0 30px #d2a14b55;padding:25px;text-align:center}
 .mark{font-size:34px;color:#ffda86}h1{margin:8px 0 15px;font-size:27px}.sub{color:#e4d4e6;font-size:14px;line-height:1.75}.preview{background:#372942;border:1px solid #ae8b66;border-radius:17px;margin:23px 0;padding:22px 16px;overflow-wrap:anywhere}.preview h2{font-size:20px;margin:6px 0;color:#ffdfa1}.preview p{font-size:15px;line-height:1.65;color:#f4e5ef}.preview .fortune-block{text-align:left;padding:15px 5px;border-top:1px solid #765c76}.preview .fortune-block h3{font-size:18px;color:#ffe3a4;margin:8px 0}.preview .fortune-block small{color:#bfb0ce}.preview .fortune-block strong{display:block;color:#f6d18d;margin-top:10px}.preview .fortune-block p{margin:6px 0 14px}.intro-logo{display:block;width:78px;height:78px;border-radius:20px;margin:0 auto 12px;object-fit:contain}
 button{appearance:none;border:0;border-radius:14px;background:linear-gradient(120deg,#fce9ac,#d4a354,#fff1be);color:#352034;padding:17px 16px;width:100%;font-size:18px;font-weight:850;cursor:pointer}
-.note{font-size:12px;color:#d0bdce;line-height:1.7;margin:16px 0 0}button:focus-visible{outline:3px solid white;outline-offset:3px}#error{color:#ffcbca}
+.note{font-size:12px;color:#d0bdce;line-height:1.7;margin:16px 0 0}button:focus-visible,a:focus-visible{outline:3px solid white;outline-offset:3px}a{color:#ffdfa1;text-underline-offset:3px}button:disabled{opacity:.55;cursor:default}#error{color:#ffcbca}
 </style>
 </head>
 <body>
 <main>
 <img class="intro-logo" src="preview.png" alt="달결 공식 아이콘">
 <h1>달결 · 오늘과 이번 주 운세</h1>
-<p class="sub">달결 앱이 설치되어 있다면 아래 버튼을 눌러 공유받은 결과를 확인하세요.</p>
+<p class="sub">공유받은 운세를 이 페이지에서 바로 볼 수 있어요.<br>달결 앱을 설치했다면 앱에서도 이어서 확인하세요.</p>
 <section class="preview" aria-label="공유받은 결과">
 <h2 id="heading">공유 결과 확인</h2>
 <p id="summary">공유된 결과를 확인하고 있습니다.</p>
 </section>
 <button id="open" type="button" disabled>달결 앱에서 결과 보기</button>
-<p class="note" id="status">앱이 없다면 정식 출시 후 설치할 수 있습니다. 별도의 회원가입이나 결제는 없습니다.</p>
+<p class="note" id="status" role="status" aria-live="polite">앱을 설치하지 않아도 위의 공유 결과를 볼 수 있어요. 앱에서 보기 버튼은 달결을 설치한 휴대폰에서 사용할 수 있습니다.</p>
+<p class="note"><a href="privacy.html">개인정보처리방침</a></p>
 </main>
 <script>
 "use strict";
-// Static site: no storage, analytics, remote requests, or automatic redirects.
-// Shared result summaries travel in the URL fragment, never in a URL query/server log.
+// The result is decoded in the browser. There is no application analytics or storage.
+// Hosting still receives normal page requests; the URL fragment is not sent in them.
 const token=location.hash.slice(1);
 const button=document.getElementById("open");
 const status=document.getElementById("status");
@@ -75,9 +76,19 @@ try{
     ]);
   }
   button.disabled=false;
+  let openingTimer;
+  document.addEventListener("visibilitychange",()=>{
+    if(document.hidden){clearTimeout(openingTimer);button.disabled=false;}
+  });
   button.addEventListener("click",()=>{
-    status.textContent="달결 앱으로 연결하고 있습니다. 설치되어 있지 않으면 앱이 열리지 않을 수 있습니다.";
+    clearTimeout(openingTimer);
+    button.disabled=true;
+    status.textContent="달결 앱으로 연결하고 있어요. 앱이 열리지 않아도 위의 결과는 계속 볼 수 있습니다.";
     location.href="dalgeul://result?data="+token;
+    openingTimer=setTimeout(()=>{
+      button.disabled=false;
+      if(!document.hidden)status.textContent="앱이 열리지 않았나요? 달결이 설치되어 있는지 확인해 주세요. 설치하지 않았다면 이 페이지에서 공유받은 결과를 확인하면 됩니다.";
+    },1800);
   });
 }catch(e){reject()}
 </script>
