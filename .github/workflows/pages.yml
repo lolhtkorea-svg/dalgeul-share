@@ -4,6 +4,10 @@ on:
     branches: [main]
     paths:
       - 'index.html'
+      - 'compose.html'
+      - 'config.js'
+      - 'share.js'
+      - 'privacy.html'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 permissions:
