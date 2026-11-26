@@ -90,18 +90,28 @@
       const files=new DataTransfer();files.items.add(new File([blob],'dalgeul-result.png',{type:'image/png'}));
       const response=await kakao.Share.uploadImage({file:files.files});
       const uploaded=response?.infos?.original?.url||response?.original?.url;
-      if(typeof uploaded!=='string'||!/^https:\/\//.test(uploaded))throw Error('Image unavailable');
-      imageUrl=uploaded;button.textContent='카카오톡으로 보내기';status.textContent='카드가 준비됐어요. 아래 버튼을 누르고 카카오톡에서 받는 사람을 선택해 주세요.';
+      if(typeof uploaded!=='string')throw Error('Unexpected image URL');
+      const image=new URL(uploaded);
+      if(image.protocol==='http:' && /^(?:[a-z0-9-]+\.)*(?:kakaocdn\.net|kakao\.com)$/i.test(image.hostname))image.protocol='https:';
+      if(image.protocol!=='https:' || image.username || image.password)throw Error('Unexpected image URL');
+      imageUrl=image.href;button.textContent='카카오톡으로 보내기';status.textContent='카드가 준비됐어요. 아래 버튼을 누르고 카카오톡에서 받는 사람을 선택해 주세요.';
     }catch(error){
       button.textContent='공유 카드 다시 준비';
       let reason='카드를 준비하지 못했어요.';
-      const detail=String(error?.msg || error?.message || '');
+      let data=error?.response?.data || error?.responseJSON || error;
+      if(typeof data==='string'){try{data=JSON.parse(data);}catch(_){}}
+      const detail=String(data?.msg || data?.error_msg || data?.message || (typeof data==='string'?data:''));
+      const code=data?.code ?? data?.error_code;
       if (/domain mismatched|unregistered domain/i.test(detail)) {
         reason='카카오가 이 공유 주소를 승인하지 않았어요.';
       } else if (detail==='SDK unavailable') {
         reason='카카오 공유 도구를 불러오지 못했어요.';
-      } else if (Number.isInteger(error?.code)) {
-        reason='카카오에서 이미지를 받지 못했어요 (오류 '+error.code+').';
+      } else if (detail==='Unexpected image URL') {
+        reason='카카오가 보낸 이미지 주소를 사용할 수 없어요.';
+      } else if (detail==='Image unavailable') {
+        reason='이 브라우저에서 카드 이미지를 만들지 못했어요.';
+      } else if (Number.isInteger(code)) {
+        reason='카카오에서 이미지를 받지 못했어요 (오류 '+code+').';
       }
       status.textContent=reason+' 아래에서 결과 링크를 복사해 카카오톡으로 보내세요.';
     }
