@@ -8,6 +8,7 @@ on:
       - 'config.js'
       - 'share.js'
       - 'privacy.html'
+      - 'testers/**'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 permissions:
