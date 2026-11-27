@@ -61,6 +61,10 @@
       button.disabled=true;
       try {
         await loadSdk();
+        const scraped = await window.Kakao.Share.scrapImage({imageUrl:config.resultBaseUrl+'preview.png'});
+        const logo = scraped?.infos?.original?.url || scraped?.original?.url;
+        if (!logo) throw Error('Card image unavailable');
+        template.content.imageUrl = logo.replace(/^http:/, 'https:');
         button.textContent='카카오톡 친구 선택';
         status.textContent='카카오톡에서 받을 친구나 대화방을 선택하세요.';
         button.onclick=()=>{
